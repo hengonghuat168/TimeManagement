@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="时间管理">
+    <title>时间管理 App</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overscroll-behavior: none;
+        }
+        * {
+            -webkit-tap-highlight-color: transparent;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const APP_PASSWORD = "8";
+
+        // Icons
+        const CheckCircle = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+        );
+
+        const Lightbulb = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+            </svg>
+        );
+
+        const Calendar = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+        );
+
+        const Plus = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+        );
+
+        const Trash2 = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+        );
+
+        const Heart = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            </svg>
+        );
+
+        const Lock = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+        );
+
+        const LogOut = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+        );
+
+        const Download = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+        );
+
+        const Upload = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            </svg>
+        );
+
+        const Settings = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+        );
+
+        const Repeat = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+        );
+
+        const TrendingUp = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+            </svg>
+        );
+
+        const BookOpen = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+        );
+
+        const Briefcase = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+        );
+
+        const Star = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+            </svg>
+        );
+
+        const UserCheck = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+        );
+
+        // Category definitions - 分两行
+        const CATEGORIES_ROW1 = {
+            todo: { name: '代办', icon: CheckCircle, color: 'bg-blue-100 text-blue-700', needsCheck: true },
+            work: { name: '工作知识', icon: Briefcase, color: 'bg-indigo-100 text-indigo-700', needsCheck: false },
+            learning: { name: '学到的东西', icon: BookOpen, color: 'bg-green-100 text-green-700', needsCheck: false }
+        };
+
+        const CATEGORIES_ROW2 = {
+            followup: { name: 'Follow Up', icon: UserCheck, color: 'bg-purple-100 text-purple-700', needsCheck: true },
+            encourage: { name: '鼓励自己', icon: Star, color: 'bg-yellow-100 text-yellow-700', needsCheck: false },
+            microhabit: { name: '微习惯', icon: Repeat, color: 'bg-teal-100 text-teal-700', needsCheck: true, isRecurring: true }
+        };
+
+        const ALL_CATEGORIES = { ...CATEGORIES_ROW1, ...CATEGORIES_ROW2 };
+
+        // 获取新加坡时间的日期字符串
+        const getSGTDateString = (date = new Date()) => {
+            const sgtTime = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Singapore' }));
+            return sgtTime.toISOString().split('T')[0];
+        };
+
+        // Login Component
+        function LoginPage({ onLogin }) {
+            const [password, setPassword] = useState('');
+            const [error, setError] = useState(false);
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                if (password === APP_PASSWORD) {
+                    onLogin();
+                    setError(false);
+                } else {
+                    setError(true);
+                    setPassword('');
+                }
+            };
+
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
+                        <div className="text-center mb-8">
+                            <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
+                                <Lock className="w-8 h-8 text-blue-600" />
+                            </div>
+                            <h1 className="text-2xl font-bold text-gray-800 mb-2">时间管理 App</h1>
+                            <p className="text-gray-500 text-sm">请输入密码访问</p>
+                        </div>
+                        
+                        <form onSubmit={handleSubmit}>
+                            <input
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                placeholder="输入密码"
+                                className={`w-full p-4 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4 ${
+                                    error ? 'border-red-500' : 'border-gray-200'
+                                }`}
+                                autoFocus
+                            />
+                            {error && <p className="text-red-500 text-sm mb-4">密码错误，请重试</p>}
+                            <button type="submit" className="w-full bg-blue-500 text-white py-4 rounded-xl font-medium hover:bg-blue-600 transition-colors">
+                                登录
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            );
+        }
+
+        // Date Picker Modal for Micro Habits
+        function DatePickerModal({ habit, onComplete, onClose }) {
+            const [selectedDate, setSelectedDate] = useState(getSGTDateString());
+            const [selectedType, setSelectedType] = useState('准');
+
+            const today = getSGTDateString();
+
+            const handleConfirm = () => {
+                onComplete(habit.id, selectedDate, selectedType);
+                onClose();
+            };
+
+            return (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-2xl p-6 max-w-sm w-full">
+                        <h3 className="text-lg font-semibold mb-4">{habit.text}</h3>
+                        
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">选择日期</label>
+                            <input
+                                type="date"
+                                value={selectedDate}
+                                onChange={(e) => {
+                                    const newDate = e.target.value;
+                                    setSelectedDate(newDate);
+                                    if (newDate === today) {
+                                        setSelectedType('准');
+                                    } else if (newDate > today) {
+                                        setSelectedType('多');
+                                    } else {
+                                        setSelectedType('补');
+                                    }
+                                }}
+                                className="w-full p-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                        </div>
+
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">完成类型</label>
+                            <div className="grid grid-cols-3 gap-2">
+                                <button
+                                    onClick={() => setSelectedType('准')}
+                                    className={`p-3 rounded-xl border-2 transition-colors ${
+                                        selectedType === '准'
+                                            ? 'bg-green-100 border-green-500 text-green-700'
+                                            : 'border-gray-200 text-gray-600'
+                                    }`}
+                                >
+                                    准时 ✓
+                                </button>
+                                <button
+                                    onClick={() => setSelectedType('多')}
+                                    className={`p-3 rounded-xl border-2 transition-colors ${
+                                        selectedType === '多'
+                                            ? 'bg-blue-100 border-blue-500 text-blue-700'
+                                            : 'border-gray-200 text-gray-600'
+                                    }`}
+                                >
+                                    提前 +
+                                </button>
+                                <button
+                                    onClick={() => setSelectedType('补')}
+                                    className={`p-3 rounded-xl border-2 transition-colors ${
+                                        selectedType === '补'
+                                            ? 'bg-orange-100 border-orange-500 text-orange-700'
+                                            : 'border-gray-200 text-gray-600'
+                                    }`}
+                                >
+                                    补做 ◄
+                                </button>
+                            </div>
+                            <div className="mt-2 text-xs text-gray-500">
+                                {selectedType === '准' && '✓ 当天准时完成'}
+                                {selectedType === '多' && '+ 提前为未来做'}
+                                {selectedType === '补' && '◄ 补做过去的'}
+                            </div>
+                        </div>
+
+                        <div className="flex gap-2">
+                            <button
+                                onClick={onClose}
+                                className="flex-1 py-3 border border-gray-300 text-gray-600 rounded-xl font-medium hover:bg-gray-50"
+                            >
+                                取消
+                            </button>
+                            <button
+                                onClick={handleConfirm}
+                                className="flex-1 py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600"
+                            >
+                                确认
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Main App
+        function TimeManagementApp() {
+            const [entries, setEntries] = useState([]);
+            const [microHabits, setMicroHabits] = useState([]);
+            const [habitCompletions, setHabitCompletions] = useState({});
+            const [inputText, setInputText] = useState('');
+            const [showCategoryModal, setShowCategoryModal] = useState(false);
+            const [showSettingsModal, setShowSettingsModal] = useState(false);
+            const [showHabitStatsModal, setShowHabitStatsModal] = useState(false);
+            const [showDailyHabitsModal, setShowDailyHabitsModal] = useState(false);
+            const [showDatePicker, setShowDatePicker] = useState(false);
+            const [selectedHabit, setSelectedHabit] = useState(null);
+            const [currentEntry, setCurrentEntry] = useState(null);
+            const [activeTab, setActiveTab] = useState('all');
+            const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+            useEffect(() => {
+                const authStatus = sessionStorage.getItem('isAuthenticated');
+                if (authStatus === 'true') {
+                    setIsAuthenticated(true);
+                }
+            }, []);
+
+            useEffect(() => {
+                if (isAuthenticated) {
+                    const saved = localStorage.getItem('timeManagementEntries');
+                    if (saved) setEntries(JSON.parse(saved));
+
+                    const savedHabits = localStorage.getItem('microHabits');
+                    if (savedHabits) setMicroHabits(JSON.parse(savedHabits));
+
+                    const savedCompletions = localStorage.getItem('habitCompletions');
+                    if (savedCompletions) setHabitCompletions(JSON.parse(savedCompletions));
+
+                    checkDailyHabits();
+                }
+            }, [isAuthenticated]);
+
+            useEffect(() => {
+                if (isAuthenticated) {
+                    localStorage.setItem('timeManagementEntries', JSON.stringify(entries));
+                }
+            }, [entries, isAuthenticated]);
+
+            useEffect(() => {
+                if (isAuthenticated) {
+                    localStorage.setItem('microHabits', JSON.stringify(microHabits));
+                }
+            }, [microHabits, isAuthenticated]);
+
+            useEffect(() => {
+                if (isAuthenticated) {
+                    localStorage.setItem('habitCompletions', JSON.stringify(habitCompletions));
+                }
+            }, [habitCompletions, isAuthenticated]);
+
+            const checkDailyHabits = () => {
+                const today = getSGTDateString();
+                const lastCheck = localStorage.getItem('lastHabitCheck');
+                
+                if (lastCheck !== today && microHabits.length > 0) {
+                    setShowDailyHabitsModal(true);
+                    localStorage.setItem('lastHabitCheck', today);
+                }
+            };
+
+            const completeDailyHabit = (habitId, date, type) => {
+                const timestamp = new Date().toISOString();
+                setHabitCompletions(prev => {
+                    const newCompletions = { ...prev };
+                    if (!newCompletions[date]) {
+                        newCompletions[date] = {};
+                    }
+                    if (!newCompletions[date][habitId]) {
+                        newCompletions[date][habitId] = [];
+                    }
+                    // 直接添加新记录，允许多次完成
+                    newCompletions[date][habitId] = [...newCompletions[date][habitId], { type, timestamp }];
+                    return newCompletions;
+                });
+            };
+
+            const handleLogin = () => {
+                setIsAuthenticated(true);
+                sessionStorage.setItem('isAuthenticated', 'true');
+            };
+
+            const handleLogout = () => {
+                setIsAuthenticated(false);
+                sessionStorage.removeItem('isAuthenticated');
+            };
+
+            const handleExport = () => {
+                const data = { entries, microHabits, habitCompletions };
+                const dataStr = JSON.stringify(data, null, 2);
+                const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(dataBlob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `时间管理数据_${getSGTDateString()}.json`;
+                link.click();
+                URL.revokeObjectURL(url);
+                alert('JSON数据已导出！');
+            };
+
+            const handleExportExcel = () => {
+                try {
+                    // 检查XLSX库是否加载
+                    if (typeof XLSX === 'undefined') {
+                        alert('Excel功能正在加载中，请稍等片刻后重试');
+                        return;
+                    }
+                    
+                    // 创建工作簿
+                    const wb = XLSX.utils.book_new();
+                    
+                    // Sheet 1: 所有条目（代办、工作知识等）
+                    if (entries.length > 0) {
+                        const entriesData = entries.map(entry => {
+                            const cat = ALL_CATEGORIES[entry.category];
+                            return {
+                                '类别': cat?.name || '',
+                                '内容': entry.text,
+                                '创建时间': formatDateTime(entry.createdAt),
+                                '状态': entry.completed ? '已完成' : '未完成',
+                                '完成时间': entry.completed && entry.completedAt ? formatDateTime(entry.completedAt) : ''
+                            };
+                        });
+                        const ws1 = XLSX.utils.json_to_sheet(entriesData);
+                        XLSX.utils.book_append_sheet(wb, ws1, '所有条目');
+                    } else {
+                        const ws1 = XLSX.utils.json_to_sheet([{'提示': '暂无数据'}]);
+                        XLSX.utils.book_append_sheet(wb, ws1, '所有条目');
+                    }
+                    
+                    // Sheet 2: 微习惯列表
+                    if (microHabits.length > 0) {
+                        const habitsData = microHabits.map(habit => ({
+                            '微习惯': habit.text,
+                            '创建时间': formatDateTime(habit.createdAt)
+                        }));
+                        const ws2 = XLSX.utils.json_to_sheet(habitsData);
+                        XLSX.utils.book_append_sheet(wb, ws2, '微习惯列表');
+                    } else {
+                        const ws2 = XLSX.utils.json_to_sheet([{'提示': '暂无微习惯'}]);
+                        XLSX.utils.book_append_sheet(wb, ws2, '微习惯列表');
+                    }
+                    
+                    // Sheet 3: 微习惯完成明细
+                    const completionDetails = [];
+                    Object.keys(habitCompletions).forEach(date => {
+                        Object.keys(habitCompletions[date]).forEach(habitId => {
+                            const habit = microHabits.find(h => h.id === parseInt(habitId));
+                            const habitName = habit ? habit.text : '已删除的习惯';
+                            const comps = habitCompletions[date][habitId];
+                            if (Array.isArray(comps)) {
+                                comps.forEach(comp => {
+                                    completionDetails.push({
+                                        '日期': date,
+                                        '微习惯': habitName,
+                                        '完成类型': comp.type,
+                                        '完成时间': formatDateTime(comp.timestamp)
+                                    });
+                                });
+                            }
+                        });
+                    });
+                    completionDetails.sort((a, b) => b['日期'].localeCompare(a['日期']));
+                    if (completionDetails.length > 0) {
+                        const ws3 = XLSX.utils.json_to_sheet(completionDetails);
+                        XLSX.utils.book_append_sheet(wb, ws3, '完成明细');
+                    } else {
+                        const ws3 = XLSX.utils.json_to_sheet([{'提示': '暂无完成记录'}]);
+                        XLSX.utils.book_append_sheet(wb, ws3, '完成明细');
+                    }
+                    
+                    // Sheet 4: 微习惯每日统计
+                    const dailyStats = [];
+                    const allDates = [...new Set(Object.keys(habitCompletions))].sort().reverse();
+                    allDates.forEach(date => {
+                        microHabits.forEach(habit => {
+                            const completions = habitCompletions[date]?.[habit.id] || [];
+                            if (Array.isArray(completions) && completions.length > 0) {
+                                const onTimeCount = completions.filter(c => c.type === '准').length;
+                                const advanceCount = completions.filter(c => c.type === '多').length;
+                                const makeupCount = completions.filter(c => c.type === '补').length;
+                                const totalCount = completions.length;
+                                
+                                dailyStats.push({
+                                    '日期': date,
+                                    '微习惯': habit.text,
+                                    '总完成次数': totalCount,
+                                    '准时': onTimeCount,
+                                    '提前': advanceCount,
+                                    '补做': makeupCount
+                                });
+                            }
+                        });
+                    });
+                    if (dailyStats.length > 0) {
+                        const ws4 = XLSX.utils.json_to_sheet(dailyStats);
+                        XLSX.utils.book_append_sheet(wb, ws4, '每日统计');
+                    } else {
+                        const ws4 = XLSX.utils.json_to_sheet([{'提示': '暂无统计数据'}]);
+                        XLSX.utils.book_append_sheet(wb, ws4, '每日统计');
+                    }
+                    
+                    // Sheet 5: 微习惯总结报告
+                    if (microHabits.length > 0) {
+                        const summaryData = microHabits.map(habit => {
+                            let totalCount = 0;
+                            let onTimeCount = 0;
+                            let advanceCount = 0;
+                            let makeupCount = 0;
+                            let daysWithCompletion = 0;
+                            
+                            Object.keys(habitCompletions).forEach(date => {
+                                const completions = habitCompletions[date]?.[habit.id] || [];
+                                if (Array.isArray(completions) && completions.length > 0) {
+                                    daysWithCompletion++;
+                                    totalCount += completions.length;
+                                    onTimeCount += completions.filter(c => c.type === '准').length;
+                                    advanceCount += completions.filter(c => c.type === '多').length;
+                                    makeupCount += completions.filter(c => c.type === '补').length;
+                                }
+                            });
+                            
+                            return {
+                                '微习惯': habit.text,
+                                '总完成次数': totalCount,
+                                '完成天数': daysWithCompletion,
+                                '准时次数': onTimeCount,
+                                '提前次数': advanceCount,
+                                '补做次数': makeupCount,
+                                '平均每天': daysWithCompletion > 0 ? parseFloat((totalCount / daysWithCompletion).toFixed(2)) : 0
+                            };
+                        });
+                        const ws5 = XLSX.utils.json_to_sheet(summaryData);
+                        XLSX.utils.book_append_sheet(wb, ws5, '总结报告');
+                    } else {
+                        const ws5 = XLSX.utils.json_to_sheet([{'提示': '暂无总结数据'}]);
+                        XLSX.utils.book_append_sheet(wb, ws5, '总结报告');
+                    }
+                    
+                    // 导出文件
+                    XLSX.writeFile(wb, `时间管理报告_${getSGTDateString()}.xlsx`);
+                    alert('✅ Excel报告已导出成功！\n\n包含5个工作表：\n📋 所有条目\n📝 微习惯列表\n✅ 完成明细\n📊 每日统计\n📈 总结报告');
+                } catch (error) {
+                    console.error('导出Excel失败:', error);
+                    alert('❌ 导出Excel失败\n\n错误信息: ' + error.message + '\n\n请尝试：\n1. 刷新页面后重试\n2. 使用导出JSON功能作为备份');
+                }
+            };
+
+            const handleImport = (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const data = JSON.parse(e.target.result);
+                            if (confirm('确定要导入数据吗？这将覆盖当前所有数据！')) {
+                                setEntries(data.entries || []);
+                                setMicroHabits(data.microHabits || []);
+                                setHabitCompletions(data.habitCompletions || {});
+                                alert('导入成功！');
+                                setShowSettingsModal(false);
+                            }
+                        } catch (error) {
+                            alert('导入失败：文件格式不正确');
+                        }
+                    };
+                    reader.readAsText(file);
+                }
+            };
+
+            const handleSubmit = () => {
+                if (inputText.trim()) {
+                    const newEntry = {
+                        id: Date.now(),
+                        text: inputText,
+                        createdAt: new Date().toISOString(),
+                        category: null,
+                        completed: false
+                    };
+                    setCurrentEntry(newEntry);
+                    setShowCategoryModal(true);
+                }
+            };
+
+            const saveEntry = (category) => {
+                const entryToSave = { ...currentEntry, category };
+                
+                if (category === 'microhabit') {
+                    setMicroHabits([...microHabits, entryToSave]);
+                } else {
+                    setEntries([entryToSave, ...entries]);
+                }
+                
+                setInputText('');
+                setCurrentEntry(null);
+                setShowCategoryModal(false);
+            };
+
+            const toggleComplete = (id, isMicroHabit = false) => {
+                if (isMicroHabit) {
+                    const habit = microHabits.find(h => h.id === id);
+                    setSelectedHabit(habit);
+                    setShowDatePicker(true);
+                } else {
+                    setEntries(entries.map(entry => 
+                        entry.id === id 
+                            ? { ...entry, completed: !entry.completed, completedAt: !entry.completed ? new Date().toISOString() : null }
+                            : entry
+                    ));
+                }
+            };
+
+            const deleteHabitCompletion = (habitId, date, index) => {
+                if (confirm('确定要删除这条完成记录吗？')) {
+                    setHabitCompletions(prev => {
+                        const newCompletions = { ...prev };
+                        if (newCompletions[date] && newCompletions[date][habitId]) {
+                            const updatedArray = [...newCompletions[date][habitId]];
+                            updatedArray.splice(index, 1);
+                            if (updatedArray.length === 0) {
+                                delete newCompletions[date][habitId];
+                            } else {
+                                newCompletions[date][habitId] = updatedArray;
+                            }
+                        }
+                        return newCompletions;
+                    });
+                }
+            };
+
+            const deleteEntry = (id, isMicroHabit = false) => {
+                if (isMicroHabit) {
+                    if (confirm('确定要删除这个微习惯吗？\n\n注意：这将删除所有相关的历史完成记录！')) {
+                        setMicroHabits(microHabits.filter(h => h.id !== id));
+                        // 同时删除所有相关的完成记录
+                        const newCompletions = { ...habitCompletions };
+                        Object.keys(newCompletions).forEach(date => {
+                            if (newCompletions[date][id]) {
+                                delete newCompletions[date][id];
+                            }
+                        });
+                        setHabitCompletions(newCompletions);
+                    }
+                } else {
+                    if (confirm('确定要删除这条记录吗?')) {
+                        setEntries(entries.filter(entry => entry.id !== id));
+                    }
+                }
+            };
+
+            const formatDateTime = (isoString) => {
+                const date = new Date(isoString);
+                return date.toLocaleString('zh-CN', {
+                    timeZone: 'Asia/Singapore',
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            };
+
+            const formatTime = (isoString) => {
+                const date = new Date(isoString);
+                return date.toLocaleTimeString('zh-CN', { 
+                    timeZone: 'Asia/Singapore', 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+            };
+
+            const filteredEntries = entries.filter(entry => {
+                if (activeTab === 'all') return true;
+                if (activeTab === 'completed') return entry.completed;
+                if (activeTab === 'microhabit') return false;
+                return entry.category === activeTab && !entry.completed;
+            }).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+            const todayItems = entries.filter(entry => {
+                if (entry.completed) return false;
+                const cat = ALL_CATEGORIES[entry.category];
+                if (!cat || !cat.needsCheck) return false;
+                const today = new Date();
+                const sgtToday = new Date(today.toLocaleString('en-US', { timeZone: 'Asia/Singapore' }));
+                const entryDate = new Date(entry.createdAt);
+                const sgtEntryDate = new Date(entryDate.toLocaleString('en-US', { timeZone: 'Asia/Singapore' }));
+                return sgtEntryDate.toDateString() === sgtToday.toDateString();
+            });
+
+            const getTodayHabitStatus = (habitId) => {
+                const today = getSGTDateString();
+                const completions = habitCompletions[today]?.[habitId];
+                return Array.isArray(completions) ? completions : [];
+            };
+
+            const getHabitCompletionForDate = (habitId, date) => {
+                const completions = habitCompletions[date]?.[habitId];
+                return Array.isArray(completions) ? completions : [];
+            };
+
+            if (!isAuthenticated) {
+                return <LoginPage onLogin={handleLogin} />;
+            }
+
+            return (
+                <div className="min-h-screen bg-gray-50 pb-20">
+                    <div className="max-w-2xl mx-auto p-4">
+                        {/* Header */}
+                        <div className="bg-white rounded-2xl shadow-sm p-6 mb-4">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h1 className="text-3xl font-bold text-gray-800 mb-2">时间管理</h1>
+                                    <p className="text-gray-500 text-sm">记录你的想法和计划</p>
+                                </div>
+                                <div className="flex gap-2">
+                                    <button onClick={() => setShowSettingsModal(true)} className="text-gray-400 hover:text-blue-500 transition-colors p-2">
+                                        <Settings className="w-6 h-6" />
+                                    </button>
+                                    <button onClick={handleLogout} className="text-gray-400 hover:text-red-500 transition-colors p-2">
+                                        <LogOut className="w-6 h-6" />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Date Picker Modal */}
+                        {showDatePicker && selectedHabit && (
+                            <DatePickerModal
+                                habit={selectedHabit}
+                                onComplete={completeDailyHabit}
+                                onClose={() => {
+                                    setShowDatePicker(false);
+                                    setSelectedHabit(null);
+                                }}
+                            />
+                        )}
+
+                        {/* Daily Habits Modal */}
+                        {showDailyHabitsModal && microHabits.length > 0 && (
+                            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                                <div className="bg-white rounded-2xl p-6 max-w-md w-full max-h-96 overflow-y-auto">
+                                    <h3 className="text-xl font-semibold mb-4">今日微习惯 🌅</h3>
+                                    <div className="space-y-3">
+                                        {microHabits.map(habit => {
+                                            const completions = getTodayHabitStatus(habit.id);
+                                            const today = getSGTDateString();
+                                            return (
+                                                <div key={habit.id} className="p-3 bg-teal-50 rounded-xl">
+                                                    <div className="flex items-center gap-3 mb-2">
+                                                        <button
+                                                            onClick={() => {
+                                                                setSelectedHabit(habit);
+                                                                setShowDatePicker(true);
+                                                            }}
+                                                            className="flex-shrink-0 w-6 h-6 rounded-full border-2 border-teal-600 flex items-center justify-center hover:bg-teal-100"
+                                                        >
+                                                            <Plus className="w-4 h-4 text-teal-600" />
+                                                        </button>
+                                                        <span className="flex-1 text-gray-800 font-medium">{habit.text}</span>
+                                                        <button
+                                                            onClick={() => {
+                                                                setShowDailyHabitsModal(false);
+                                                                deleteEntry(habit.id, true);
+                                                            }}
+                                                            className="flex-shrink-0 text-gray-400 hover:text-red-500 transition-colors p-1"
+                                                            title="删除此微习惯"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
+                                                    {completions.length > 0 && (
+                                                        <div className="ml-9 flex flex-wrap gap-1">
+                                                            {completions.map((comp, idx) => (
+                                                                <span
+                                                                    key={idx}
+                                                                    className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold ${
+                                                                        comp.type === '准'
+                                                                            ? 'bg-green-500 text-white'
+                                                                            : comp.type === '多'
+                                                                            ? 'bg-blue-500 text-white'
+                                                                            : 'bg-orange-500 text-white'
+                                                                    }`}
+                                                                    title={formatDateTime(comp.timestamp)}
+                                                                >
+                                                                    {comp.type} {formatTime(comp.timestamp)}
+                                                                    <button
+                                                                        onClick={() => deleteHabitCompletion(habit.id, today, idx)}
+                                                                        className="ml-1 hover:bg-white hover:bg-opacity-20 rounded-full p-0.5"
+                                                                    >
+                                                                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                                                            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                                                        </svg>
+                                                                    </button>
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                    <button
+                                        onClick={() => setShowDailyHabitsModal(false)}
+                                        className="w-full mt-4 py-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600"
+                                    >
+                                        完成
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Habit Stats Modal */}
+                        {showHabitStatsModal && (
+                            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                                <div className="bg-white rounded-2xl p-6 max-w-4xl w-full max-h-[80vh] overflow-y-auto">
+                                    <h3 className="text-xl font-semibold mb-4">微习惯统计 📊</h3>
+                                    {microHabits.length === 0 ? (
+                                        <div className="text-center text-gray-400 py-8">
+                                            还没有微习惯记录
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-6">
+                                            {microHabits.map(habit => {
+                                                const days = [];
+                                                // 前90天 + 未来10天 = 总共100天
+                                                for (let i = 89; i >= -10; i--) {
+                                                    const date = new Date();
+                                                    const sgtDate = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Singapore' }));
+                                                    sgtDate.setDate(sgtDate.getDate() - i);
+                                                    const dateStr = getSGTDateString(sgtDate);
+                                                    const completions = getHabitCompletionForDate(habit.id, dateStr);
+                                                    const isToday = dateStr === getSGTDateString();
+                                                    const isFuture = i < 0;
+                                                    days.push({ date: dateStr, completions, isToday, isFuture });
+                                                }
+                                                
+                                                const totalCompletions = days.reduce((sum, day) => sum + day.completions.length, 0);
+                                                
+                                                return (
+                                                    <div key={habit.id} className="border-b pb-4 last:border-b-0">
+                                                        <div className="flex items-center justify-between mb-3">
+                                                            <div className="font-medium flex items-center gap-2">
+                                                                {habit.text}
+                                                                <button
+                                                                    onClick={() => {
+                                                                        setShowHabitStatsModal(false);
+                                                                        deleteEntry(habit.id, true);
+                                                                    }}
+                                                                    className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                                                                    title="删除此微习惯及所有记录"
+                                                                >
+                                                                    <Trash2 className="w-4 h-4" />
+                                                                </button>
+                                                            </div>
+                                                            <div className="text-sm text-gray-500">
+                                                                总完成: {totalCompletions}次
+                                                            </div>
+                                                        </div>
+                                                        <div className="text-xs text-gray-500 mb-2">
+                                                            前90天 | 今天 | 后10天
+                                                        </div>
+                                                        <div className="grid grid-cols-10 gap-1">
+                                                            {days.map((day, idx) => {
+                                                                const hasCompletion = day.completions.length > 0;
+                                                                const firstType = hasCompletion ? day.completions[0].type : '';
+                                                                return (
+                                                                    <div key={idx} className="text-center">
+                                                                        <div
+                                                                            className={`h-10 rounded flex flex-col items-center justify-center text-xs font-bold ${
+                                                                                day.isFuture && !hasCompletion
+                                                                                    ? 'bg-gray-100 text-gray-300 border border-dashed border-gray-300'
+                                                                                    : !hasCompletion
+                                                                                    ? 'bg-gray-200 text-gray-400'
+                                                                                    : firstType === '准'
+                                                                                    ? 'bg-green-500 text-white'
+                                                                                    : firstType === '多'
+                                                                                    ? 'bg-blue-500 text-white'
+                                                                                    : 'bg-orange-500 text-white'
+                                                                            } ${day.isToday ? 'ring-2 ring-blue-500' : ''}`}
+                                                                            title={`${day.date}${day.isFuture ? ' (未来)' : ''}\n${day.completions.map(c => `${c.type} ${formatTime(c.timestamp)}`).join('\n')}`}
+                                                                        >
+                                                                            {hasCompletion && (
+                                                                                <>
+                                                                                    <span>{firstType}</span>
+                                                                                    {day.completions.length > 1 && (
+                                                                                        <span className="text-[10px]">×{day.completions.length}</span>
+                                                                                    )}
+                                                                                </>
+                                                                            )}
+                                                                        </div>
+                                                                        <div className={`text-[10px] mt-1 ${day.isToday ? 'font-bold text-blue-600' : 'text-gray-500'}`}>
+                                                                            {new Date(day.date).getDate()}
+                                                                        </div>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                        <div className="mt-3 text-xs text-gray-500 flex gap-3">
+                                                            <span><span className="inline-block w-3 h-3 bg-green-500 rounded mr-1"></span>准时</span>
+                                                            <span><span className="inline-block w-3 h-3 bg-blue-500 rounded mr-1"></span>提前</span>
+                                                            <span><span className="inline-block w-3 h-3 bg-orange-500 rounded mr-1"></span>补做</span>
+                                                            <span><span className="inline-block w-3 h-3 border border-dashed border-gray-300 rounded mr-1"></span>未来</span>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                    <button
+                                        onClick={() => setShowHabitStatsModal(false)}
+                                        className="w-full mt-4 py-3 text-gray-600 hover:text-gray-800 font-medium"
+                                    >
+                                        关闭
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Settings Modal */}
+                        {showSettingsModal && (
+                            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                                <div className="bg-white rounded-2xl p-6 max-w-sm w-full">
+                                    <h3 className="text-xl font-semibold mb-4">设置</h3>
+                                    <div className="space-y-3">
+                                        <button onClick={handleExport} className="w-full p-4 bg-green-50 hover:bg-green-100 rounded-xl flex items-center gap-3">
+                                            <Download className="w-6 h-6 text-green-600" />
+                                            <div className="text-left">
+                                                <div className="font-medium text-green-900">导出JSON数据</div>
+                                                <div className="text-xs text-green-600">备份原始数据（可导入恢复）</div>
+                                            </div>
+                                        </button>
+                                        <button onClick={handleExportExcel} className="w-full p-4 bg-emerald-50 hover:bg-emerald-100 rounded-xl flex items-center gap-3">
+                                            <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                            </svg>
+                                            <div className="text-left">
+                                                <div className="font-medium text-emerald-900">导出Excel报告</div>
+                                                <div className="text-xs text-emerald-600">完整报告（5个工作表）</div>
+                                            </div>
+                                        </button>
+                                        <label className="w-full p-4 bg-blue-50 hover:bg-blue-100 rounded-xl flex items-center gap-3 cursor-pointer">
+                                            <Upload className="w-6 h-6 text-blue-600" />
+                                            <div className="text-left">
+                                                <div className="font-medium text-blue-900">导入数据</div>
+                                                <div className="text-xs text-blue-600">从JSON文件恢复</div>
+                                            </div>
+                                            <input type="file" accept=".json" onChange={handleImport} className="hidden" />
+                                        </label>
+                                        <button
+                                            onClick={() => {
+                                                setShowSettingsModal(false);
+                                                setShowHabitStatsModal(true);
+                                            }}
+                                            className="w-full p-4 bg-teal-50 hover:bg-teal-100 rounded-xl flex items-center gap-3"
+                                        >
+                                            <TrendingUp className="w-6 h-6 text-teal-600" />
+                                            <div className="text-left">
+                                                <div className="font-medium text-teal-900">微习惯统计</div>
+                                                <div className="text-xs text-teal-600">查看100天记录（前90天+后10天）</div>
+                                            </div>
+                                        </button>
+                                    </div>
+                                    <button onClick={() => setShowSettingsModal(false)} className="w-full mt-4 py-3 text-gray-600 hover:text-gray-800 font-medium">
+                                        关闭
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Today's Items Alert */}
+                        {todayItems.length > 0 && (
+                            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <Calendar className="w-5 h-5 text-blue-600" />
+                                    <h3 className="font-semibold text-blue-900">今日待办 ({todayItems.length})</h3>
+                                </div>
+                                {todayItems.map(item => (
+                                    <div key={item.id} className="text-sm text-blue-800 py-1 flex items-center gap-2">
+                                        <div className="w-1.5 h-1.5 bg-blue-600 rounded-full"></div>
+                                        {item.text}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Today's Micro Habits */}
+                        {microHabits.length > 0 && (
+                            <div className="bg-teal-50 border border-teal-200 rounded-xl p-4 mb-4">
+                                <div className="flex items-center justify-between mb-3">
+                                    <div className="flex items-center gap-2">
+                                        <Repeat className="w-5 h-5 text-teal-600" />
+                                        <h3 className="font-semibold text-teal-900">今日微习惯</h3>
+                                    </div>
+                                    <button
+                                        onClick={() => setShowHabitStatsModal(true)}
+                                        className="text-xs text-teal-600 hover:text-teal-800 font-medium"
+                                    >
+                                        查看统计
+                                    </button>
+                                </div>
+                                {microHabits.map(habit => {
+                                    const completions = getTodayHabitStatus(habit.id);
+                                    const today = getSGTDateString();
+                                    return (
+                                        <div key={habit.id} className="py-2">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <button
+                                                    onClick={() => {
+                                                        setSelectedHabit(habit);
+                                                        setShowDatePicker(true);
+                                                    }}
+                                                    className="w-6 h-6 rounded-full border-2 border-teal-600 flex items-center justify-center hover:bg-teal-100 flex-shrink-0"
+                                                >
+                                                    <Plus className="w-4 h-4 text-teal-600" />
+                                                </button>
+                                                <span className="flex-1 text-teal-800 font-medium">{habit.text}</span>
+                                                <span className="text-xs text-teal-600">({completions.length})</span>
+                                                <button
+                                                    onClick={() => deleteEntry(habit.id, true)}
+                                                    className="flex-shrink-0 text-gray-400 hover:text-red-500 transition-colors p-1"
+                                                    title="删除此微习惯"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                            {completions.length > 0 && (
+                                                <div className="ml-8 flex flex-wrap gap-1">
+                                                    {completions.map((comp, idx) => (
+                                                        <span
+                                                            key={idx}
+                                                            className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-semibold ${
+                                                                comp.type === '准'
+                                                                    ? 'bg-green-500 text-white'
+                                                                    : comp.type === '多'
+                                                                    ? 'bg-blue-500 text-white'
+                                                                    : 'bg-orange-500 text-white'
+                                                            }`}
+                                                            title={formatDateTime(comp.timestamp)}
+                                                        >
+                                                            {comp.type} {formatTime(comp.timestamp)}
+                                                            <button
+                                                                onClick={() => deleteHabitCompletion(habit.id, today, idx)}
+                                                                className="ml-1 hover:bg-white hover:bg-opacity-20 rounded-full p-0.5"
+                                                            >
+                                                                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                                                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                                                </svg>
+                                                            </button>
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+
+                        {/* Input Area */}
+                        <div className="bg-white rounded-2xl shadow-sm p-4 mb-4">
+                            <textarea
+                                value={inputText}
+                                onChange={(e) => setInputText(e.target.value)}
+                                placeholder="写下你的想法..."
+                                className="w-full p-3 border border-gray-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                rows="4"
+                            />
+                            <button
+                                onClick={handleSubmit}
+                                disabled={!inputText.trim()}
+                                className="mt-3 w-full bg-blue-500 text-white py-3 rounded-xl font-medium hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                            >
+                                <Plus className="w-5 h-5" />
+                                添加条目
+                            </button>
+                        </div>
+
+                        {/* Category Modal - 分两行 */}
+                        {showCategoryModal && (
+                            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                                <div className="bg-white rounded-2xl p-6 max-w-sm w-full">
+                                    <h3 className="text-xl font-semibold mb-4">选择类型</h3>
+                                    <div className="space-y-3">
+                                        {/* 第一行 */}
+                                        <div className="grid grid-cols-3 gap-2">
+                                            {Object.entries(CATEGORIES_ROW1).map(([key, cat]) => {
+                                                const Icon = cat.icon;
+                                                return (
+                                                    <button
+                                                        key={key}
+                                                        onClick={() => saveEntry(key)}
+                                                        className={`p-3 rounded-xl transition-colors ${cat.color} hover:opacity-80 flex flex-col items-center gap-2`}
+                                                    >
+                                                        <Icon className="w-6 h-6" />
+                                                        <div className="text-xs font-medium text-center">{cat.name}</div>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                        {/* 第二行 */}
+                                        <div className="grid grid-cols-3 gap-2">
+                                            {Object.entries(CATEGORIES_ROW2).map(([key, cat]) => {
+                                                const Icon = cat.icon;
+                                                return (
+                                                    <button
+                                                        key={key}
+                                                        onClick={() => saveEntry(key)}
+                                                        className={`p-3 rounded-xl transition-colors ${cat.color} hover:opacity-80 flex flex-col items-center gap-2`}
+                                                    >
+                                                        <Icon className="w-6 h-6" />
+                                                        <div className="text-xs font-medium text-center">{cat.name}</div>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => {
+                                            setShowCategoryModal(false);
+                                            setCurrentEntry(null);
+                                        }}
+                                        className="w-full mt-4 py-3 text-gray-600 hover:text-gray-800 font-medium"
+                                    >
+                                        取消
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Tabs */}
+                        <div className="bg-white rounded-2xl shadow-sm mb-4 overflow-hidden">
+                            <div className="flex overflow-x-auto scrollbar-hide">
+                                <button
+                                    onClick={() => setActiveTab('all')}
+                                    className={`flex-shrink-0 py-3 px-4 text-sm font-medium transition-colors ${
+                                        activeTab === 'all' ? 'bg-blue-500 text-white' : 'text-gray-600 hover:bg-gray-50'
+                                    }`}
+                                >
+                                    全部
+                                </button>
+                                {Object.entries(ALL_CATEGORIES).filter(([key]) => key !== 'microhabit').map(([key, cat]) => {
+                                    const Icon = cat.icon;
+                                    return (
+                                        <button
+                                            key={key}
+                                            onClick={() => setActiveTab(key)}
+                                            className={`flex-shrink-0 py-3 px-4 text-sm font-medium transition-colors flex items-center gap-1 ${
+                                                activeTab === key ? 'bg-blue-500 text-white' : 'text-gray-600 hover:bg-gray-50'
+                                            }`}
+                                        >
+                                            <Icon className="w-4 h-4" />
+                                            {cat.name}
+                                        </button>
+                                    );
+                                })}
+                                <button
+                                    onClick={() => setActiveTab('completed')}
+                                    className={`flex-shrink-0 py-3 px-4 text-sm font-medium transition-colors flex items-center gap-1 ${
+                                        activeTab === 'completed' ? 'bg-blue-500 text-white' : 'text-gray-600 hover:bg-gray-50'
+                                    }`}
+                                >
+                                    <Heart className="w-4 h-4" />
+                                    已完成
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Entries List */}
+                        <div className="space-y-3">
+                            {filteredEntries.length === 0 ? (
+                                <div className="bg-white rounded-2xl shadow-sm p-8 text-center text-gray-400">
+                                    暂无内容
+                                </div>
+                            ) : (
+                                filteredEntries.map(entry => {
+                                    const cat = ALL_CATEGORIES[entry.category];
+                                    const Icon = cat?.icon;
+                                    return (
+                                        <div
+                                            key={entry.id}
+                                            className={`bg-white rounded-2xl shadow-sm p-4 transition-all ${
+                                                entry.completed ? 'opacity-60' : ''
+                                            }`}
+                                        >
+                                            <div className="flex items-start gap-3">
+                                                {cat?.needsCheck && (
+                                                    <button
+                                                        onClick={() => toggleComplete(entry.id)}
+                                                        className={`mt-1 flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+                                                            entry.completed ? 'bg-green-500 border-green-500' : 'border-gray-300 hover:border-blue-500'
+                                                        }`}
+                                                    >
+                                                        {entry.completed && <CheckCircle className="w-4 h-4 text-white" />}
+                                                    </button>
+                                                )}
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                                                        <span className={`px-2 py-1 rounded-lg text-xs font-medium flex items-center gap-1 ${cat?.color}`}>
+                                                            {Icon && <Icon className="w-3 h-3" />}
+                                                            {cat?.name}
+                                                        </span>
+                                                        <span className="text-xs text-gray-400">{formatDateTime(entry.createdAt)}</span>
+                                                    </div>
+                                                    <p className={`text-gray-800 break-words ${entry.completed ? 'line-through' : ''}`}>
+                                                        {entry.text}
+                                                    </p>
+                                                    {entry.completed && entry.completedAt && (
+                                                        <div className="mt-2 text-xs text-green-600 flex items-center gap-1">
+                                                            <CheckCircle className="w-3 h-3" />
+                                                            完成于 {formatDateTime(entry.completedAt)}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <button onClick={() => deleteEntry(entry.id)} className="flex-shrink-0 text-gray-400 hover:text-red-500 transition-colors">
+                                                    <Trash2 className="w-5 h-5" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    );
+                                })
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<TimeManagementApp />, document.getElementById('root'));
+    </script>
+</body>
+</html>
